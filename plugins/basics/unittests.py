@@ -55,6 +55,16 @@ def uprint(t, params):
 def run(gc):
     gc['debug'] = True
     
+    # TCP test
+    params = {
+        'host': 'www-us.apache.org',
+        'port': 80
+    }
+    t = plugins.tests.tcp.test(gc)
+    uprint(t, params)
+    t.run(params)
+    spit(t)
+    
     # HTTP test
     params = {
         'host': 'www-eu.apache.org',
