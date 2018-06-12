@@ -88,11 +88,6 @@ if __name__ == "__main__":
     gconf['misc']['offset'] = toffset
     
     # Connect to master (or at least try to), leave a calling card if not known.
+    # TDB
     
-    
-    # Init an SMTP test object
-    t = plugins.tests.smtp.test(gconf)
-    
-    # Run a test against hermes
-    t.run({'host': 'hermes.apache.org', 'port': '2025'})
     
