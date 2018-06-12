@@ -1,0 +1,5 @@
+# Warble requirements file
+ruamel.yaml
+requests
+dnspython
+ldap

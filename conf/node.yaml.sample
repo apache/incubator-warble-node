@@ -1,0 +1,11 @@
+client:
+  # Warble Master hostname
+  server: demo.warble.apache.org
+  # APP ID and Key for node to access master data (and for master to know who this is)
+  # This typically gets set by the program after talking to the master.
+  appid: UNSET
+  appkey: foobar
+
+misc:
+  # NTP server or pool for adjusting time inside the node.
+  ntpserver: pool.ntp.org
