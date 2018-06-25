@@ -3,3 +3,4 @@ ruamel.yaml
 requests
 dnspython
 ldap
+cryptography>=2.0.0
