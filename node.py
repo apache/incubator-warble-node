@@ -36,7 +36,6 @@ import plugins.basics.crypto
 basepath = os.path.dirname(os.path.realpath(__file__))
 configpath = "%s/conf/node.yaml" % basepath
 
-
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description = "Run-time configuration options for Apache Warble (incubating)")
@@ -57,7 +56,7 @@ if __name__ == "__main__":
         else:
             print("Bork: --config passed to program, but could not find config file %s" % args.config)
             sys.exit(-1)
-        
+
     # Init yaml, load configuration.
     # We use ruamel.yaml here, because it preserves the existing structure and
     # comments, unlike the traditional yaml library.
@@ -66,6 +65,28 @@ if __name__ == "__main__":
     conftext = open(configpath).read()
     gconf = yaml.load(conftext)
     
+    # On first run, or in the case of removing/forgetting the encryption
+    # key pair, we need to generate a new pair for communication
+    # purposes. This requires read+write access to the conf/ dir. In
+    # subsequent runs, we can just load the existing (registered) key.
+    privkey = None
+    keypath = "%s/conf/privkey.pem" % basepath
+
+    # If key exists, load it...
+    if os.path.exists(keypath):
+        print("Loading private key from %s" % keypath)
+        privkey = plugins.basics.crypto.loadprivate(keypath)
+
+    # Otherwise, generate using the crypto lib and save in PEM format
+    else:
+        print("Generating 4096 bit async encryption key pair as %s..." % keypath)
+        privkey = plugins.basics.crypto.keypair(bits = 4096)
+        privpem = plugins.basics.crypto.pem(privkey)
+        with open(keypath, "wb") as f:
+            f.write(privpem)
+            f.close()
+        print("Key pair successfully generated and saved!")
+
     # Unit test mode?
     if args.test:
         print("Running tests...")
