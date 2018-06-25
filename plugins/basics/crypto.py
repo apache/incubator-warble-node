@@ -26,6 +26,7 @@
 
 import cryptography.hazmat.backends
 import cryptography.hazmat.primitives
+import cryptography.hazmat.primitives.serialization
 import cryptography.hazmat.primitives.asymmetric.rsa
 import cryptography.hazmat.primitives.asymmetric.utils
 import cryptography.hazmat.primitives.asymmetric.padding
@@ -40,6 +41,41 @@ def keypair(bits = 4096):
     )
     return private_key
 
+def loadprivate(filepath):
+    """ Loads a private key from a file path """
+    with open(filepath, "rb") as key_file:
+        private_key = cryptography.hazmat.primitives.serialization.load_pem_private_key(
+            key_file.read(),
+            password=None,
+            backend=cryptography.hazmat.backends.default_backend()
+        )
+        return private_key
+
+def loadpublic(filepath):
+    """ Loads a public key from a file path """
+    with open(filepath, "rb") as key_file:
+        public_key = cryptography.hazmat.primitives.serialization.load_pem_public_key(
+            key_file.read(),
+            backend=cryptography.hazmat.backends.default_backend()
+        )
+        return public_key
+
+def pem(key):
+    """ Turn a key (public or private) into PEM format """
+    # Private key?
+    if hasattr(key, 'decrypt'):
+        return key.private_bytes(
+            encoding=cryptography.hazmat.primitives.serialization.Encoding.PEM,
+            format=cryptography.hazmat.primitives.serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=cryptography.hazmat.primitives.serialization.NoEncryption()
+         )
+    # Public key?
+    else:
+        return key.public_bytes(
+            encoding=cryptography.hazmat.primitives.serialization.Encoding.PEM,
+            format=cryptography.hazmat.primitives.serialization.PublicFormat.SubjectPublicKeyInfo
+         )
+    
 def decrypt(key, text):
     """ Decrypt a message encrypted with the public key, by using the private key on-disk """
     retval = b""
