@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.4
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -31,9 +31,11 @@ import argparse
 # Warble-specific libraries
 import plugins.tests
 import plugins.basics.misc
+import plugins.basics.crypto
 
 basepath = os.path.dirname(os.path.realpath(__file__))
 configpath = "%s/conf/node.yaml" % basepath
+
 
 if __name__ == "__main__":
     
