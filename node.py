@@ -89,7 +89,10 @@ if __name__ == "__main__":
 
     # Unit test mode?
     if args.test:
-        print("Running tests...")
+        print("Testing crypto library")
+        plugins.basics.crypto.test()
+                
+        print("Running unit tests...")
         import plugins.basics.unittests
         gconf['version'] = _VERSION
         plugins.basics.unittests.run(gconf)
