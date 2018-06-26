@@ -24,6 +24,7 @@ _VERSION = '0.1.0'
 import os
 import sys
 import stat
+import time
 import ruamel.yaml
 import requests
 import datetime
@@ -178,7 +179,5 @@ if __name__ == "__main__":
     toffset = plugins.basics.misc.adjustTime(gconf['misc']['ntpserver'])
     gconf['misc']['offset'] = toffset
     
-    # Connect to master (or at least try to), leave a calling card if not known.
-    # TDB
     
     
