@@ -121,7 +121,7 @@ if __name__ == "__main__":
     # If no api key has been retrieved yet, get one
     if gconf['client'].get('apikey', 'UNSET') == 'UNSET':
         if not serverurl:
-            print("ALERT: Could not find the URL for the Warble server. Please set it in conf/node.yaml first.")
+            print("ALERT: Could not find the URL for the Warble server. Please set it in %s first." % configpath)
             sys.exit(-1)
         print("Uninitialized node, trying to register and fetch API key from %s" % serverurl)
         try:
