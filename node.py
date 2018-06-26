@@ -28,6 +28,8 @@ import ruamel.yaml
 import requests
 import datetime
 import argparse
+import socket
+import base64
 
 # Warble-specific libraries
 import plugins.tests
@@ -36,12 +38,14 @@ import plugins.basics.crypto
 
 basepath = os.path.dirname(os.path.realpath(__file__))
 configpath = "%s/conf/node.yaml" % basepath
+hostname = socket.gethostname()
 
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description = "Run-time configuration options for Apache Warble (incubating)")
     parser.add_argument('--version', action = 'store_true', help = 'Print node version and exit')
     parser.add_argument('--test', action = 'store_true', help = 'Run debug unit tests')
+    parser.add_argument('--wait', action = 'store_true', help = 'Wait for node to be fully registered on server before continuing')
     parser.add_argument('--config', type = str, help = 'Load a specific configuration file')
     args = parser.parse_args()
     
@@ -103,7 +107,7 @@ if __name__ == "__main__":
     if args.test:
         print("Testing crypto library")
         plugins.basics.crypto.test()
-                
+                        
         print("Running unit tests...")
         import plugins.basics.unittests
         gconf['version'] = _VERSION
@@ -111,13 +115,61 @@ if __name__ == "__main__":
         sys.exit(0)
     
     
-    # If no app id set, get a unique app id for this node.
-    if gconf['client'].get('appid', 'UNSET') == 'UNSET':
-        gconf['client']['appid'] = plugins.basics.misc.appid()
-        print("Uninitialized node, setting base App ID to %s" % gconf['client']['appid'])
-        # Save updated changes to disk
-        yaml.dump(gconf, open(configpath, "w"))
     
+    serverurl = gconf['client'].get('server')
+    
+    # If no api key has been retrieved yet, get one
+    if gconf['client'].get('apikey', 'UNSET') == 'UNSET':
+        if not serverurl:
+            print("ALERT: Could not find the URL for the Warble server. Please set it in conf/warble.yaml first.")
+            sys.exit(-1)
+        print("Uninitialized node, trying to register and fetch API key from %s" % serverurl)
+        try:
+            rv = requests.post('%s/api/node/register' % serverurl, json = {
+                'version': _VERSION,
+                'hostname': hostname,
+                'pubkey': str(plugins.basics.crypto.pem(privkey.public_key()), 'ascii')
+                })
+            if rv.status_code == 200:
+                payload = rv.json()
+                apikey = payload['key']
+                if payload['encrypted']:
+                    apikey = str(plugins.basics.crypto.decrypt(privkey, base64.b64decode(apikey)), 'ascii')
+                print("Fetched API key %s from server" % apikey)
+                gconf['client']['apikey'] = apikey
+                # Save updated changes to disk
+                yaml.dump(gconf, open(configpath, "w"))
+            else:
+                print("Got unexpected status code %u from Warble server!")
+                print(rv.text)
+                sys.exit(-1)
+        except Exception as err:
+            print("Could not connect to the Warble server at %s: %s" % (serverurl, err))
+            sys.exit(-1)
+    else:
+        apikey = gconf['client'].get('apikey')
+        
+    # Now we check if we're eligible to do tests.
+    # If --wait is passed, we'll pause and retry until we get our way.
+    print("INFO: Checking for node eligibility...")
+    while True:
+        rv = requests.get('%s/api/node/status' % serverurl, headers = {'APIKey': apikey})
+        if rv.status_code == 200:
+            payload = rv.json()
+            if payload.get('enabled'):
+                break # We're enabled, yaaay
+            else:
+                if args.wait:
+                    print("Node not eligible yet, but --wait passed, so waiting 30 seconds...")
+                    time.sleep(30)
+                else:
+                    print("Node has not been marked as enabled on the server, exiting")
+                    sys.exit(0)
+        else:
+            print("Unexpected status code %u from Warble server!" % rv.status_code)
+            print(rv.text)
+            sys.exit(-1)
+            
     # Set node software version for tests
     gconf['version'] = _VERSION
     
