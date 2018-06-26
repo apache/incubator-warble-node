@@ -138,6 +138,8 @@ if __name__ == "__main__":
                 if payload['encrypted']:
                     apikey = str(plugins.basics.crypto.decrypt(privkey, base64.b64decode(apikey)), 'ascii')
                 print("INFO: Fetched API key %s from server" % apikey)
+                print("INFO: Registered with fingerprint: %s" % plugins.basics.crypto.fingerprint(privkey.public_key()))
+                print("INFO: Please verify that the node request has this fingerprint when verifying the node.")
                 gconf['client']['apikey'] = apikey
                 # Save updated changes to disk
                 yaml.dump(gconf, open(configpath, "w"))
@@ -150,7 +152,7 @@ if __name__ == "__main__":
             sys.exit(-1)
     else:
         apikey = gconf['client'].get('apikey')
-        
+    
     # Now we check if we're eligible to do tests.
     # If --wait is passed, we'll pause and retry until we get our way.
     print("INFO: Checking for node eligibility...")
