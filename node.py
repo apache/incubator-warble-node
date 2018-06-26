@@ -62,6 +62,7 @@ if __name__ == "__main__":
             print("Bork: --config passed to program, but could not find config file %s" % args.config)
             sys.exit(-1)
 
+    print("INFO: Starting Warble node software, version %s" % _VERSION)
     # Init yaml, load configuration.
     # We use ruamel.yaml here, because it preserves the existing structure and
     # comments, unlike the traditional yaml library.
@@ -79,7 +80,7 @@ if __name__ == "__main__":
 
     # If key exists, load it...
     if os.path.exists(keypath):
-        print("Loading private key from %s" % keypath)
+        print("INFO: Loading private key from %s" % keypath)
         try:
             privkey = plugins.basics.crypto.loadprivate(keypath)
         except Exception as err:
@@ -135,16 +136,16 @@ if __name__ == "__main__":
                 apikey = payload['key']
                 if payload['encrypted']:
                     apikey = str(plugins.basics.crypto.decrypt(privkey, base64.b64decode(apikey)), 'ascii')
-                print("Fetched API key %s from server" % apikey)
+                print("INFO: Fetched API key %s from server" % apikey)
                 gconf['client']['apikey'] = apikey
                 # Save updated changes to disk
                 yaml.dump(gconf, open(configpath, "w"))
             else:
-                print("Got unexpected status code %u from Warble server!")
+                print("ALERT: Got unexpected status code %u from Warble server!")
                 print(rv.text)
                 sys.exit(-1)
         except Exception as err:
-            print("Could not connect to the Warble server at %s: %s" % (serverurl, err))
+            print("ALERT: Could not connect to the Warble server at %s: %s" % (serverurl, err))
             sys.exit(-1)
     else:
         apikey = gconf['client'].get('apikey')
@@ -160,13 +161,13 @@ if __name__ == "__main__":
                 break # We're enabled, yaaay
             else:
                 if args.wait:
-                    print("Node not eligible yet, but --wait passed, so waiting 30 seconds...")
+                    print("WARNING: Node not eligible yet, but --wait passed, so waiting 30 seconds...")
                     time.sleep(30)
                 else:
-                    print("Node has not been marked as enabled on the server, exiting")
+                    print("WARNING: Node has not been marked as enabled on the server, exiting")
                     sys.exit(0)
         else:
-            print("Unexpected status code %u from Warble server!" % rv.status_code)
+            print("ALERT: Unexpected status code %u from Warble server!" % rv.status_code)
             print(rv.text)
             sys.exit(-1)
             
