@@ -23,6 +23,7 @@ _VERSION = '0.1.0'
 # Basic imports
 import os
 import sys
+import stat
 import ruamel.yaml
 import requests
 import datetime
@@ -85,6 +86,7 @@ if __name__ == "__main__":
         with open(keypath, "wb") as f:
             f.write(privpem)
             f.close()
+        os.chmod(keypath, stat.S_IWUSR|stat.S_IREAD) # chmod 600, only user can read/write
         print("Key pair successfully generated and saved!")
 
     # Unit test mode?
