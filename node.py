@@ -76,16 +76,26 @@ if __name__ == "__main__":
     # If key exists, load it...
     if os.path.exists(keypath):
         print("Loading private key from %s" % keypath)
-        privkey = plugins.basics.crypto.loadprivate(keypath)
-
+        try:
+            privkey = plugins.basics.crypto.loadprivate(keypath)
+        except Exception as err:
+            print("ALERT: Could not read PEM file %s: %s" % (keypath, err))
+            print("Warble has detected that the PEM file used for secure communications exists on disk, but cannot be read and/or parsed by the client. This may be due to either a permission error (warble requires that you run the application as the owner of the PEM file), or the file may have been corrupted. Further assistance may be available on our mailing list, users@warble.apache.org ")
+            sys.exit(-1)
+            
     # Otherwise, generate using the crypto lib and save in PEM format
     else:
         print("Generating 4096 bit async encryption key pair as %s..." % keypath)
         privkey = plugins.basics.crypto.keypair(bits = 4096)
         privpem = plugins.basics.crypto.pem(privkey)
-        with open(keypath, "wb") as f:
-            f.write(privpem)
-            f.close()
+        try:
+            with open(keypath, "wb") as f:
+                f.write(privpem)
+                f.close()
+        except OSError as err:
+            print("ALERT: Could not write PEM file %s: %s" % (keypath, err))
+            print("Warble is unable to write the key pair used for secure communications to disk. This may be a permission issue. As this file is crucial to continuous operation of the Warble node, the program cannot continue. If you are unable to address this issue, further assistance may be available via our mailing list, users@warble.apache.org")
+            sys.exit(-1)
         os.chmod(keypath, stat.S_IWUSR|stat.S_IREAD) # chmod 600, only user can read/write
         print("Key pair successfully generated and saved!")
 
