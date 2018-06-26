@@ -31,6 +31,7 @@ import cryptography.hazmat.primitives.asymmetric.rsa
 import cryptography.hazmat.primitives.asymmetric.utils
 import cryptography.hazmat.primitives.asymmetric.padding
 import cryptography.hazmat.primitives.hashes
+import hashlib
 
 def keypair(bits = 4096):
     """ Generate a private+public key pair for encryption/signing """
@@ -60,6 +61,14 @@ def loadpublic(filepath):
         )
         return public_key
 
+def loads(text):
+    """ Loads a public key from a string """
+    public_key = cryptography.hazmat.primitives.serialization.load_pem_public_key(
+        bytes(text, 'ascii', errors = 'strict'),
+        backend=cryptography.hazmat.backends.default_backend()
+    )
+    return public_key
+
 def pem(key):
     """ Turn a key (public or private) into PEM format """
     # Private key?
@@ -75,7 +84,21 @@ def pem(key):
             encoding=cryptography.hazmat.primitives.serialization.Encoding.PEM,
             format=cryptography.hazmat.primitives.serialization.PublicFormat.SubjectPublicKeyInfo
          )
-    
+
+
+def fingerprint(key):
+    """ Derives a digest fingerprint from a key """
+    print(type(key))
+    if isinstance(key, cryptography.hazmat.backends.openssl.rsa._RSAPublicKey):
+        _pem = pem(key)
+        print("key is rsa")
+    elif type(key) is str:
+        _pem = bytes(key, 'ascii', errors = 'replace')
+    else:
+        _pem = key
+    sha = hashlib.sha256(_pem).hexdigest()
+    return sha
+
 def decrypt(key, text):
     """ Decrypt a message encrypted with the public key, by using the private key on-disk """
     retval = b""
