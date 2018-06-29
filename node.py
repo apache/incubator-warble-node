@@ -31,6 +31,7 @@ import datetime
 import argparse
 import socket
 import base64
+import json
 
 # Warble-specific libraries
 import plugins.tests
@@ -174,6 +175,26 @@ if __name__ == "__main__":
             print(rv.text)
             sys.exit(-1)
             
+    ## Get tasks to perform
+    print("INFO: Fetching tasks to perform")
+    rv = requests.get('%s/api/node/tasks' % serverurl, headers = {'APIKey': apikey})
+    if rv.status_code == 200:
+        # Decrypt or die trying
+        try:
+            plain = plugins.basics.crypto.decrypt(privkey, base64.b64decode(rv.text))
+        except:
+            print("ALERT: Could not retrieve task data from Warble master due to an encryption error.")
+            sys.exit(-1)
+        # All good, load json payload and process!
+        payload = json.loads(plain.decode('utf-8'))
+        print("Got the following tasks:")
+        for task in payload['tasks']:
+            print("- %04u: %s" % (task['id'], task['name']))
+    else:
+        print("ALERT: Got status %u from warble master!" % rv.status_code)
+        print(rv.text)
+        sys.exit(-1)
+
     # Set node software version for tests
     gconf['version'] = _VERSION
     
