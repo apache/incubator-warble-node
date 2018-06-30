@@ -47,6 +47,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = "Run-time configuration options for Apache Warble (incubating)")
     parser.add_argument('--version', action = 'store_true', help = 'Print node version and exit')
     parser.add_argument('--test', action = 'store_true', help = 'Run debug unit tests')
+    parser.add_argument('--fingerprint', action = 'store_true', help = 'Print fingerprint and exit')
     parser.add_argument('--wait', action = 'store_true', help = 'Wait for node to be fully registered on server before continuing')
     parser.add_argument('--config', type = str, help = 'Load a specific configuration file')
     args = parser.parse_args()
@@ -64,7 +65,7 @@ if __name__ == "__main__":
             print("Bork: --config passed to program, but could not find config file %s" % args.config)
             sys.exit(-1)
 
-    print("INFO: Starting Warble node software, version %s" % _VERSION)
+    
     # Init yaml, load configuration.
     # We use ruamel.yaml here, because it preserves the existing structure and
     # comments, unlike the traditional yaml library.
@@ -82,14 +83,14 @@ if __name__ == "__main__":
 
     # If key exists, load it...
     if os.path.exists(keypath):
-        print("INFO: Loading private key from %s" % keypath)
+        if not args.fingerprint: # Skip this line if we just want the fingerprint
+            print("INFO: Loading private key from %s" % keypath)
         try:
             privkey = plugins.basics.crypto.loadprivate(keypath)
         except Exception as err:
             print("ALERT: Could not read PEM file %s: %s" % (keypath, err))
             print("Warble has detected that the PEM file used for secure communications exists on disk, but cannot be read and/or parsed by the client. This may be due to either a permission error (warble requires that you run the application as the owner of the PEM file), or the file may have been corrupted. Further assistance may be available on our mailing list, users@warble.apache.org ")
             sys.exit(-1)
-            
     # Otherwise, generate using the crypto lib and save in PEM format
     else:
         print("Generating 4096 bit async encryption key pair as %s..." % keypath)
@@ -105,7 +106,11 @@ if __name__ == "__main__":
             sys.exit(-1)
         os.chmod(keypath, stat.S_IWUSR|stat.S_IREAD) # chmod 600, only user can read/write
         print("Key pair successfully generated and saved!")
-
+    if args.fingerprint:
+        print(plugins.basics.crypto.fingerprint(privkey.public_key()))
+        sys.exit(0)
+    print("INFO: Starting Warble node software, version %s" % _VERSION)
+    
     # Unit test mode?
     if args.test:
         print("Testing crypto library")
